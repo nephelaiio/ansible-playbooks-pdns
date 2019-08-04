@@ -22,25 +22,25 @@ The following parameters are available/required for playbook invocation
 No variables should be overloading. You can still review the vars section in the [playbook definition](recursor.yml) if you wish to tweak playbook internal behavior
 
 ### [server.yml](nginx.yml):
-| required | variable                              | description                                                  | default                                |
-| ---      | ---                                   | ---                                                          | ---                                    |
-| no       | pdns_url                              | pdns management url                                          | 'https://{{ ansible_fqdn }}'           |
-| no       | pdns_recursors                        | list of pdns recursors to register zones with                | []                                     |
-| no       | pdns_domains                          | list of domain names to add to the server                    | []                                     |
-| no       | pdns_master                           | whether to configure the server as master or slave           | no                                     |
-| no       | pdns_master_ips                       | ips for pdns masters (only used if pdns_master is false) (*) | []                                     |
-| no       | pdns_psql_db                          | pdns postgresql database                                     | pdns                                   |
-| no       | pdns_psql_user                        | pdns postgresql user                                         | pdns                                   |
-| *yes*    | pdns_psql_pass                        | pdns postgresql password                                     | n/a                                    |
-| *yes*    | pdns_api_key                          | pdns api key                                                 | n/a                                    |
-| no       | pdns_soa_master                       | default zone soa master                                      | '{{ ansible_fqdn }}'                   |
-| no       | pdns_soa_ttl                          | default zone soa ttl                                         | 3600                                   |
-| *yes*    | acme_certificate_aws_accesskey_id     | an ec2 key id with route53 management rights                 | lookup('env', 'AWS_ACCESS_KEY_ID')     |
-| *yes*    | acme_certificate_aws_accesskey_secret | an ec2 key secret                                            | lookup('env', 'AWS_SECRET_ACCESS_KEY') |
+| required | variable                              | description                                              | default                                |
+| ---      | ---                                   | ---                                                      | ---                                    |
+| no       | pdns_url                              | pdns management url                                      | 'https://{{ ansible_fqdn }}'           |
+| no       | pdns_recursors                        | list of pdns recursors to register zones with            | []                                     |
+| no       | pdns_domains                          | list of domain names to add to the server                | []                                     |
+| no       | pdns_master                           | whether to configure the server as master or slave       | no                                     |
+| no       | pdns_master_ips                       | ips for pdns masters (only used if pdns_master is false) | (*)                                    |
+| no       | pdns_psql_db                          | pdns postgresql database                                 | pdns                                   |
+| no       | pdns_psql_user                        | pdns postgresql user                                     | pdns                                   |
+| *yes*    | pdns_psql_pass                        | pdns postgresql password                                 | n/a                                    |
+| *yes*    | pdns_api_key                          | pdns api key                                             | n/a                                    |
+| no       | pdns_soa_master                       | default zone soa master                                  | '{{ ansible_fqdn }}'                   |
+| no       | pdns_soa_ttl                          | default zone soa ttl                                     | 3600                                   |
+| *yes*    | acme_certificate_aws_accesskey_id     | an ec2 key id with route53 management rights             | lookup('env', 'AWS_ACCESS_KEY_ID')     |
+| *yes*    | acme_certificate_aws_accesskey_secret | an ec2 key secret                                        | lookup('env', 'AWS_SECRET_ACCESS_KEY') |
 
-(*): hint for pdns_master_ips:
+(*):
 ```
-pdns_master_ips: "{{ hostvars.values() | selectattr('pdns_master', 'defined') | selectattr('pdns_master', 'equalto', True) | list }}"
+pdns_master_ips: "{{ hostvars.values() | selectattr('pdns_master', 'defined') | selectattr('pdns_master', 'equalto', True) | map(attribute='ansible_default_ipv4') | map(attribute='address') | list }}"
 ```
 
 ### [records.yml](nginx.yml):
