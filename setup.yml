@@ -1,0 +1,17 @@
+---
+- name: Install project prerequisites
+
+  hosts: localhost
+
+  tasks:
+
+    - name: install requirements
+      command: pip install -r requirements.txt
+
+    - name: run ansible galaxy
+      command: ansible-galaxy install -r roles/requirements.yml -p galaxy/ --force
+
+    - name: pull git submodules
+      command: git submodule update --recursive
+      tags:
+        - skip_ansible_lint
