@@ -48,14 +48,6 @@ pdns_master_ips: "{{ hostvars.values() | selectattr('pdns_master', 'defined') | 
 | ---      | ---                                   | ---                                          | ---                                    |
 | *yes*    | awx_url                               | target awx url                               | n/a                                    |
 
-### [client.yml](configure.yml):
-| required | variable      | description                                  | default |
-| *yes*    | awx_url       | target awx url                               | n/a     |
-| *no*     | awx_users     | [list of awx users](#Users)                  | []      |
-| *no*     | awx_schedules | [list of awx template schedules](#Schedules) | []      |
-| *no*     | awx_templates | [list of awx template](#Templates)           | []      |
-| *no*     | awx_organizations | [list of awx template](#Organizations) | []      |
-
 ## Dependencies
 
 All playbooks have the following role dependencies
@@ -72,9 +64,10 @@ See the [requirements](https://raw.githubusercontent.com/nephelaiio/ansible-role
 ```
 git checkout https://galaxy.ansible.com/nephelaiio/ansible-playbooks-pdns pdns
 ansible-playbook -i inventory/ pdns/recursor.yml
+ansible-playbook -i inventory/ pdns/server.yml
 ```
 
-## Testin (TODO)
+## Testing (TODO)
 
 Please make sure your environment has [docker](https://www.docker.com) installed in order to run role validation tests. Additional python dependencies are listed in the [requirements](https://raw.githubusercontent.com/nephelaiio/ansible-role-requirements/master/requirements.txt)
 
