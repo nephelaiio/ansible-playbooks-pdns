@@ -105,10 +105,11 @@
             zone_size: 32k
             sticky_cookie: false
             servers:
-              address: 127.0.0.1
-              port: "{{ pdns_api_port }}"
-              weight: 1
-              health_check: max_fails=3 fail_timeout=5s
+              localhost:
+                address: 127.0.0.1
+                port: "{{ pdns_api_port }}"
+                weight: 1
+                health_check: max_fails=3 fail_timeout=5s
 
     acme_certificate_domain: "{{ awx_url | urlsplit('hostname') }}"
     acme_certificate_chainfile: "/etc/nginx/{{ acme_certificate_domain }}.chain.crt"
@@ -318,7 +319,7 @@
           rrsets:
             - name: "{{ fqdn }}"
               type: A
-              ttl: "{{ dns_ttl }}"
+              ttl: "{{ pdns_soa_ttl }}"
               changetype: REPLACE
               records:
                 - content: "{{ ansible_default_ipv4.address }}"
@@ -329,9 +330,10 @@
           X-API-Key: "{{ pdns_api_key }}"
         status_code: 204
       vars:
-        fqdn: "{{ letsencrypt_domain }}."
-        record: "{{ letsencrypt_record }}"
-        zone: "{{ letsencrypt_zone }}"
+
+        fqdn: "{{ pdns_hostname }}."
+        record: "{{ pdns_hostname | split_with('.') | head }}"
+        zone: "{{ pdns_hostname | split_with('.') | tail | join('.') }}"
       tags:
         - records
 
