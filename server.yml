@@ -7,22 +7,18 @@
 
   vars:
 
-    pdns_recursors: []
-    pdns_url: "https://{{ ansible_fqdn }}"
     pdns_hostname: "{{ pdns_url | urlsplit('hostname') }}"
-    pdns_api_proto: http
-    pdns_api_port: 8081
-    pdns_psql_user: pdns
-    pdns_psql_db: pdns
-    pdns_master_ips: "{{ hostvars.values() | selectattr('pdns_master', 'defined') | selectattr('pdns_master', 'equalto', True) | map(attribute='ansible_default_ipv4') | map(attribute='address') | list }}"
-    pdns_soa_master: "{{ ansible_fqdn }}" 
-    pdns_soa_ttl: 3600
+    pdns_api_proto_default: http
+    pdns_api_port_default: 8081
+    pdns_master_ips_default: "{{ play_hosts | selectattr('pdns_master', 'defined') | selectattr('pdns_master', 'equalto', True) | map(attribute='ansible_default_ipv4') | map(attribute='address') | list }}"
+    pdns_soa_master_default: "{{ ansible_fqdn }}" 
+    pdns_soa_ttl_default: 300
     pdns_config:
       api: yes
       api-key: "{{ pdns_api_key }}"
       webserver: yes
       webserver-address: 127.0.0.1
-      webserver-port: "{{ pdns_api_port }}"
+      webserver-port: "{{ pdns_api_port | default(pdns_api_port_default) }}"
       webserver-allow-from: 127.0.0.1
       dnsupdate: no
       master: "{{ (pdns_master | default('no')) | bool }}"
@@ -34,14 +30,14 @@
       local-address: "{{ ansible_host }}:53"
       security-poll-suffix: ''
       default-soa-name: "{{ play_hosts | first | map(attribute='inventory_hostname') }}"
-      default-soa-mail: "{{ pdns_soa_master }}"
-      default-ttl: "{{ pdns_soa_ttl }}"
+      default-soa-mail: "{{ pdns_soa_master | default(pdns_soa_master_default) }}"
+      default-ttl: "{{ pdns_soa_ttl | default(pdns_soa_ttl_default) }}"
     pdns_backends:
       gpgsql:
-        user: "{{ pdns_psql_user }}"
+        user: "{{ pdns_psql_user | default('pdns') }}"
         host: 127.0.0.1
         password: "{{ pdns_psql_pass }}"
-        dbname: "{{ pdns_psql_db }}"
+        dbname: "{{ pdns_psql_db | default('pdns') }}"
 
     nginx_install_from: os_repository
     nginx_cleanup_config_path:
@@ -107,11 +103,11 @@
             servers:
               localhost:
                 address: 127.0.0.1
-                port: "{{ pdns_api_port }}"
+                port: "{{ pdns_api_port | default(pdns_api_port_default) }}"
                 weight: 1
                 health_check: max_fails=3 fail_timeout=5s
 
-    acme_certificate_domain: "{{ awx_url | urlsplit('hostname') }}"
+    acme_certificate_domain: "{{ pdns_url | urlsplit('hostname') }}"
     acme_certificate_chainfile: "/etc/nginx/{{ acme_certificate_domain }}.chain.crt"
     acme_certificate_keyfile: "/etc/nginx/{{ acme_certificate_domain }}.key"
     acme_certificate_add_ca: yes
@@ -132,22 +128,30 @@
           setup:
           delegate_to: "{{ item }}"
           delegate_facts: yes
-          loop: "{{ pdns_recursors }}"
+          loop: "{{ pdns_recursors | default([]) }}"
           tags:
             - always
 
         - name: build recursor host metadata
           set_fact:
-            hosts_entries: "{{ (hosts_entries | default([])) | union([recursor_host]) }}"
+            recursor_hosts_entries: "{{ (recursor_hosts_entries | default([])) | union([recursor_host]) }}"
           loop_control:
             label: "{{ item }}"
           vars:
             recursor_host:
               name: "{{ hostvars[item]['ansible_fqdn'] }}"
               ip: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
-          loop: "{{ pdns_recursors }}"
+          loop: "{{ pdns_recursors | default([]) }}"
           tags:
             - always
+
+        - name: set hosts entries metadata
+          set_fact:
+            hosts_entries: "{{ recursor_hosts_entries + pdns_hosts_entries }}"
+          vars:
+            pdns_hosts_entries:
+              - name: "{{ pdns_hostname }}"
+                ip: 127.0.0.1
 
       run_once: yes
 
@@ -253,7 +257,7 @@
 
     - name: query pdns zones
       uri:
-        url: "{{ pdns_api_proto }}://localhost:{{ pdns_api_port }}/api/v1/servers/localhost/zones"
+        url: "{{ pdns_api_proto | default(pdns_api_proto_default) }}://localhost:{{ pdns_api_port | default(pdns_api_port_default) }}/api/v1/servers/localhost/zones"
         method: GET
         headers:
           X-API-Key: "{{ pdns_api_key }}"
@@ -261,9 +265,9 @@
       tags:
         - always
 
-    - name: build list of existing zones
+    - name: build list of existing master zones
       set_fact:
-        pdns_zones: "{{ pdns_zones_query.json | map(attribute='id') | list }}"
+        pdns_zones: "{{ pdns_zones_query.json | selectattr('kind', 'equalto', 'Master') | map(attribute='name') | list }}"
       tags:
         - always
 
@@ -271,12 +275,11 @@
       command:
         "pdnsutil create-zone {{ zone_name }} {{ zone_ns }}"
       vars:
-        zone: "{{ item.value }}"
-        zone_name: "{{ zone.name }}."
-        zone_ns: "{{ zone.ns | map('map_format', '%s.') | list | first | string }}"
+        zone_name: "{{ item }}."
+        zone_ns: "{{ play_hosts | map('map_format', '%s.') | list | first | string }}"
       loop_control:
         label: "{{ zone_name }}"
-      loop: "{{ dns_zones | dict2items }}"
+      loop: "{{ pdns_domains }}"
       when: zone_name not in pdns_zones
       tags:
         - zones
@@ -285,18 +288,17 @@
       command:
         "pdnsutil set-kind {{ zone_name }} {{ zone_kind }}"
       vars:
-        zone: "{{ item.value }}"
-        zone_name: "{{ zone.name }}."
+        zone_name: "{{ item }}."
         zone_kind: "{{ 'master' if pdns_master else 'slave' }}"
       loop_control:
         label: "{{ zone_name }}"
-      loop: "{{ dns_zones | dict2items }}"
+      loop: "{{ pdns_domains }}"
       tags:
         - zones
 
     - name: set zone masters
       command:
-        "pdnsutil change-slave-zone-master {{ zone_name }} {{ pdns_master_ips | join(' ') }}"
+        "pdnsutil change-slave-zone-master {{ zone_name }} {{ pdns_master_ips | default(pdns_master_ips_default) | join(' ') }}"
       vars:
         zone: "{{ item.value }}"
         zone_name: "{{ zone.name }}."
@@ -304,25 +306,26 @@
       loop_control:
         label: "{{ zone_name }}"
       loop: "{{ dns_zones | dict2items }}"
+      when: pdns_master_ips | default(pdns_master_ips_default) != []
       tags:
         - zones
 
     - meta: flush_handlers
 
-    - name: update pdns dns record
+    - name: manage pdns self records
       uri:
-        url: "{{ pdns_api_proto }}://localhost:{{ pdns_api_port }}/api/v1/servers/localhost/zones/{{ zone }}"
+        url: "{{ pdns_api_proto | default(pdns_api_proto_default) }}://localhost:{{ pdns_api_port | default(pdns_api_port_default) }}/api/v1/servers/localhost/zones/{{ zone_name }}"
         method: PATCH
         return_content: yes
         body_format: json
         body:
           rrsets:
-            - name: "{{ fqdn }}"
-              type: A
-              ttl: "{{ pdns_soa_ttl }}"
+            - name: "{{ record_name }}"
+              type: "{{ record_type }}"
+              ttl: "{{ pdns_soa_ttl | default(pdns_soa_ttl_default) }}"
               changetype: REPLACE
               records:
-                - content: "{{ ansible_default_ipv4.address }}"
+                - content: "{{ record_content }}"
                   disabled: no
                   set-ptr: no
                   comments: []
@@ -330,10 +333,20 @@
           X-API-Key: "{{ pdns_api_key }}"
         status_code: 204
       vars:
-
-        fqdn: "{{ pdns_hostname }}."
-        record: "{{ pdns_hostname | split_with('.') | head }}"
-        zone: "{{ pdns_hostname | split_with('.') | tail | join('.') }}"
+        record_name: "{{ record.name | regex_replace('\\.$', '') }}."
+        record_content: "{{ record.content }}"
+        record_type: "{{ record.type }}"
+        zone_name: "{{ record_name.split('.')[1:-1] | join('.') }}."
+      loop_control:
+        loop_var: record
+        label: "{{ record.name }}"
+      loop:
+        - name: "{{ ansible_fqdn }}."
+          type: A
+          content: "{{ ansible_default_ipv4.address }}"
+        - name: "{{ pdns_hostname }}."
+          type: CNAME
+          content: "{{ ansible_fqdn }}."
       tags:
         - records
 
@@ -341,7 +354,7 @@
 
         - name: query pdns zones
           uri:
-            url: "{{ pdns_api_proto }}://localhost:{{ pdns_api_port }}/api/v1/servers/localhost/zones"
+            url: "{{ pdns_url }}/api/v1/servers/localhost/zones"
             method: GET
             headers:
               X-API-Key: "{{ pdns_api_key }}"
@@ -362,7 +375,7 @@
             headers:
               X-API-Key: "{{ pdns_rec_api_key }}"
             validate_certs: no
-          loop: "{{ pdns_recursors }}"
+          loop: "{{ pdns_recursors | default([]) }}"
           register: pdns_recursor_zones
           tags:
             - recursors
@@ -383,7 +396,7 @@
             zone_name: "{{ item.1 }}"
             recursor_zones: "{{ pdns_recursor_zones.results | selectattr('item', 'equalto', recursor) | first }}"
             zone_id: "{{ (recursor_zones.json | selectattr('name', 'match', zone_name + '\\.?') | first).id | default('') }}"
-          loop: "{{ pdns_recursors | product(pdns_domains | map(attribute='name') | list) | list }}"
+          loop: "{{ pdns_recursors | default([]) | product(pdns_zones) | list }}"
           when: zone_id != ''
           tags:
             - recursors
@@ -397,7 +410,7 @@
               - 201
             body_format: json
             body:
-              name: "{{ zone_name }}."
+              name: "{{ zone_name }}"
               type: Zone
               kind: Forwarded
               servers: "{{ play_hosts | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | list }}"
@@ -409,7 +422,7 @@
           vars:
             recursor: "{{ item.0 }}"
             zone_name: "{{ item.1 }}"
-          loop: "{{ pdns_recursors | product(pdns_domains | map(attribute='name') | list) | list }}"
+          loop: "{{ pdns_recursors | default([]) | product(pdns_zones) | list }}"
           tags:
             - recursors
 

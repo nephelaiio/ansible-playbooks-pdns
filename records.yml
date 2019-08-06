@@ -1,0 +1,95 @@
+---
+- name: Register records in dns
+
+  hosts: pdns_servers
+
+  gather_facts: no
+
+  roles:
+
+    - nephelaiio.plugins
+
+  vars:
+
+    pdns_records_default: []
+    pdns_api_proto_default: http
+    pdns_api_port_default: 8081
+
+  tasks:
+
+    - block:
+
+        - name: query pdns zones
+          uri:
+            url: "{{ pdns_url }}/api/v1/servers/localhost/zones"
+            method: GET
+            body_format: json
+            headers:
+              X-API-Key: "{{ pdns_api_key }}"
+            validate_certs: no
+          vars:
+            zone_name: "{{ item }}."
+          register: pdns_zones_query
+          tags:
+            - records
+
+        - name: build list of existing master zones
+          set_fact:
+            pdns_zones: "{{ pdns_zones_query.json | selectattr('kind', 'equalto', 'Master') | map(attribute='name') | list }}"
+
+        - name: query pdns records
+          uri:
+            url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
+            method: GET
+            body_format: json
+            headers:
+              X-API-Key: "{{ pdns_api_key }}"
+            validate_certs: no
+          loop_control:
+            loop_var: zone_name
+          loop: "{{ pdns_zones }}"
+          register: pdns_records_query
+          tags:
+            - records
+
+        - name: build list of existing records
+          set_fact:
+            _pdns_records: "{{ pdns_records_query.results | map(attribute='json') | map(attribute='rrsets') | flatten | json_query(query) | list }}"
+          vars:
+            query: "[?type!='SOA' && type!='NS']"
+
+        - name: manage extra records
+          uri:
+            url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
+            method: "{{ 'PUT' if not record_name in _pdns_records else 'PATCH' }}"
+            body_format: json
+            body:
+              kind: Master
+              rrsets:
+                - "{{ record_rrset }}"
+            headers:
+              X-API-Key: "{{ pdns_api_key }}"
+            validate_certs: no
+            status_code: 204
+          vars:
+            record_name: "{{ item.name | regex_replace('\\.$', '') }}."
+            zone_name: "{{ record_name.split('.')[1:-1] | join('.') }}."
+            record_type: "{{ record.type | default('A') }}"
+            record_rrset:
+              name: "{{ record_name }}"
+              type: "{{ record_type }}"
+              ttl: "{{ dns_ttl }}"
+              changetype: 'REPLACE'
+              records:
+                - content: "{{ record.content }}"
+                  disabled: false
+                  set-ptr: true
+          loop_control:
+            loop_var: record
+            label: "{{ item.0 }}"
+          loop: "{{ pdns_records | default(pdns_records_default) }}"
+          when:
+            - not record_name in _pdns_records
+            - record_type != 'PTR'
+
+      run_once: yes

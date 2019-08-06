@@ -7,7 +7,7 @@
 
   vars:
 
-    default_nameservers:
+    nameservers_default:
       - 1.1.1.1
       - 8.8.8.8
     pdns_rec_api_addr: 127.0.0.1
@@ -152,7 +152,7 @@
       include_role:
         name: ahuffman.resolv
       vars:
-        resolv_nameservers: "{{ nameservers | default(default_nameservers) }}"
+        resolv_nameservers: "{{ nameservers | default(nameservers_default) }}"
         resolv_domain: "{{ base_domain }}"
         resolv_options:
           - timeout:2

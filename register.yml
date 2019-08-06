@@ -1,0 +1,37 @@
+---
+- name: Configure pdns authoritative server
+
+  hosts: "{{ pdns_registrer | default('all') }}"
+
+  become: yes
+
+  roles:
+
+    - nephelaiio.plugins
+
+  tasks:
+
+    - uri:
+        url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
+        method: PATCH
+        body_format: json
+        body:
+          rrsets:
+            - "{{ record_rrset }}"
+        headers:
+          X-API-Key: "{{ pdns_api_key }}"
+        status_code: 204
+      vars:
+        zone_name: "{{ inventory_hostname | split_with('.') | tail | join('.') }}."
+        record_name: "{{ inventory_hostname }}."
+        record_rrset:
+          name: "{{ record_name }}"
+          type: A
+          ttl: "{{ pdns_record_ttl | default(300) }}"
+          changetype: 'REPLACE'
+          records:
+            - content: "{{ ansible_host }}"
+              disabled: false
+              set-ptr: true
+      when:
+        - ansible_host | ipaddr
