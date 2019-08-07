@@ -1,7 +1,7 @@
 ---
 - name: Configure pdns authoritative server
 
-  hosts: "{{ pdns_registrer | default('all') }}"
+  hosts: "{{ pdns_register | default('all') }}"
 
   become: yes
 

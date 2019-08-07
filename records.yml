@@ -12,8 +12,6 @@
   vars:
 
     pdns_records_default: []
-    pdns_api_proto_default: http
-    pdns_api_port_default: 8081
 
   tasks:
 
