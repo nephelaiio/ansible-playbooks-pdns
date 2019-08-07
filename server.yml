@@ -27,7 +27,7 @@
       allow-axfr-ips: "{{ play_hosts | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
       setuid: pdns
       setgid: pdns
-      local-address: "{{ ansible_host }}:53"
+      local-address: "{{ ansible_default_ipv4.address }}:53"
       security-poll-suffix: ''
       default-soa-name: "{{ play_hosts | first | map(attribute='inventory_hostname') }}"
       default-soa-mail: "{{ pdns_soa_master | default(pdns_soa_master_default) }}"
