@@ -11,7 +11,7 @@
     pdns_api_proto_default: http
     pdns_api_port_default: 8081
     pdns_master_ips_default: "{{ play_hosts | selectattr('pdns_master', 'defined') | selectattr('pdns_master', 'equalto', True) | map(attribute='ansible_default_ipv4') | map(attribute='address') | list }}"
-    pdns_soa_master_default: "{{ ansible_fqdn }}" 
+    pdns_soa_master_default: "{{ ansible_fqdn }}"
     pdns_soa_ttl_default: 300
     pdns_config:
       api: yes
