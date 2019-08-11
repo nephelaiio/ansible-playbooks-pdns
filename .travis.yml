@@ -8,9 +8,8 @@ dist: xenial
 python: "3.7"
 
 install:
-  - sudo apt install -y git jq
-  - sudo pip install -r requirements.txt
-  - pip install -r https://raw.githubusercontent.com/nephelaiio/ansible-role-requirements/master/requirements.txt
+  - sudo apt-get install -y git jq
+  - pip install -r requirements.txt
   - git clone https://github.com/basherpm/basher.git ~/.basher
   - export PATH="$HOME/.basher/bin:$PATH"
   - eval "$(basher init -)"
