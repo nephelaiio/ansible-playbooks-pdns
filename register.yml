@@ -1,11 +1,9 @@
 ---
 - name: Register host in dns
 
-  hosts: "{{ pdns_register | default('all') }}"
+  hosts: pdns_register
 
   gather_facts: no
-
-  ignore_unreachable: yes
 
   roles:
 
