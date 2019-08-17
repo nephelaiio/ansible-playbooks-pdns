@@ -1,9 +1,11 @@
 ---
-- name: Configure pdns authoritative server
+- name: Register host in dns
 
   hosts: "{{ pdns_register | default('all') }}"
 
-  become: yes
+  gather_facts: no
+
+  ignore_unreachable: yes
 
   roles:
 
@@ -11,7 +13,8 @@
 
   tasks:
 
-    - uri:
+    - name: register host in dns
+      uri:
         url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
         method: PATCH
         body_format: json
@@ -21,6 +24,7 @@
         headers:
           X-API-Key: "{{ pdns_api_key }}"
         status_code: 204
+        validate_certs: no
       vars:
         zone_name: "{{ inventory_hostname | split_with('.') | tail | join('.') }}."
         record_name: "{{ inventory_hostname }}."
