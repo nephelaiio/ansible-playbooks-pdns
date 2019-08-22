@@ -1,0 +1,6 @@
+---
+pdns_rec_user: pdns
+pdns_rec_group: pdns
+pdns_pkg_requirements:
+  - dnsutils
+pdns_nginx_user: www-data

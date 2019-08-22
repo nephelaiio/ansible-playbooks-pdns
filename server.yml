@@ -47,7 +47,6 @@
     nginx_main_template:
       conf_file_name: nginx.conf
       conf_file_location: /etc/nginx/
-      user: www-data
       worker_processes: auto
       error_level: warn
       worker_connections: 1024
@@ -73,7 +72,7 @@
         ssl:
           key: "{{ acme_certificate_keyfile }}"
           cert: "{{ acme_certificate_chainfile }}"
-          protocols: TLSv1.2 TLSv1.3
+          protocols: TLSv1.2
           ciphers: HIGH:!aNULL:!MD5
         reverse_proxy:
           locations:
@@ -122,6 +121,13 @@
 
   pre_tasks:
 
+    - name: include variable overrides
+      include_vars: "{{ item }}"
+      with_first_found:
+        - "vars/{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml"
+        - "vars/{{ ansible_distribution | lower }}.yml"
+        - "vars/{{ ansible_os_family | lower }}.yml"
+
     - block:
 
         - name: gather recursor metadata
@@ -162,9 +168,9 @@
         name: dnspython
         state: latest
 
-    - name: install dns utilities
-      apt:
-        name: dnsutils
+    - name: install requirements
+      package:
+        name: "{{ pdns_pkg_requirements }}"
         state: latest
 
     - name: install postgresql

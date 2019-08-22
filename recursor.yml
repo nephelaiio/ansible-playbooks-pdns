@@ -13,8 +13,8 @@
     pdns_rec_api_addr: 127.0.0.1
     pdns_rec_api_dir: /etc/powerdns/recursor.d
     pdns_rec_api_port: 8082
-    pdns_rec_user: pdns
-    pdns_rec_group: pdns
+    pdns_rec_user: "{{ 'pdns' if ansible_os_family == 'Debian' else 'pdns-recursor' }}"
+    pdns_rec_group: "{{ 'pdns' if ansible_os_family == 'Debian' else 'pdns-recursor' }}"
     pdns_rec_service_overrides:
       ReadWritePaths: "{{ pdns_rec_api_dir }}"
     pdns_rec_config:
@@ -48,7 +48,7 @@
     nginx_main_template:
       conf_file_name: nginx.conf
       conf_file_location: /etc/nginx/
-      user: www-data
+      user: "{{ pdns_nginx_user }}"
       worker_processes: auto
       error_level: warn
       worker_connections: 1024
@@ -74,7 +74,7 @@
         ssl:
           key: "{{ acme_certificate_keyfile }}"
           cert: "{{ acme_certificate_chainfile }}"
-          protocols: TLSv1.2 TLSv1.3
+          protocols: TLSv1.2
           ciphers: HIGH:!aNULL:!MD5
         reverse_proxy:
           locations:
@@ -113,6 +113,13 @@
 
   pre_tasks:
 
+    - name: include variable overrides
+      include_vars: "{{ item }}"
+      with_first_found:
+        - "vars/{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml"
+        - "vars/{{ ansible_distribution | lower }}.yml"
+        - "vars/{{ ansible_os_family | lower }}.yml"
+
     - block:
 
         - name: build recursor host metadata
@@ -130,16 +137,10 @@
 
   tasks:
 
-    - name: remove bind recursor
-      apt:
-        package: bind9
-        state: absent
-        purge: yes
-
-      when:
-        - ansible_os_family is defined
-        - ansible_os_family == 'Debian'
-        - ansible_distribution_release == 'bionic'
+    - name: install requirements
+      package:
+        name: "{{ pdns_pkg_requirements }}"
+        state: latest
 
     - name: disable systemd-resolved
       service:
@@ -147,6 +148,10 @@
         state: stopped
         enabled: no
       register: systemd_resolved_svc
+      when:
+        - ansible_os_family is defined
+        - ansible_os_family == 'Debian'
+        - ansible_distribution_release == 'bionic'
 
     - name: bootstrap resolv.conf
       include_role:

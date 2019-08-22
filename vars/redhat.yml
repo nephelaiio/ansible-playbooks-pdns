@@ -1,0 +1,6 @@
+---
+pdns_rec_user: pdns-recursor
+pdns_rec_group: pdns-recursor
+pdns_pkg_requirements:
+  - bind-utils
+pdns_nginx_user: nginx
