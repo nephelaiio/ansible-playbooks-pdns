@@ -25,8 +25,8 @@
       slave: "{{ not ((pdns_master | default('no')) | bool) }}"
       disable-axfr: "{{ not ((pdns_master | default('no')) | bool) }}"
       allow-axfr-ips: "{{ play_hosts | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
-      setuid: pdns
-      setgid: pdns
+      setuid: "{{ pdns_rec_user }}"
+      setgid: "{{ pdns_rec_group }}"
       local-address: "{{ ansible_default_ipv4.address }}:53"
       security-poll-suffix: ''
       default-soa-name: "{{ play_hosts | first | map(attribute='inventory_hostname') }}"
@@ -47,6 +47,7 @@
     nginx_main_template:
       conf_file_name: nginx.conf
       conf_file_location: /etc/nginx/
+      user: "{{ pdns_nginx_user }}"
       worker_processes: auto
       error_level: warn
       worker_connections: 1024
@@ -127,6 +128,13 @@
         - "vars/{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml"
         - "vars/{{ ansible_distribution | lower }}.yml"
         - "vars/{{ ansible_os_family | lower }}.yml"
+
+    - name: install postgresql yum repo
+      yum:
+        name: "{{ pdns_pg_yumrepo | default(pdns_pg_yumrepo_default) }}"
+        state: present
+      when:
+        - ansible_os_family == 'RedHat'
 
     - block:
 
@@ -221,6 +229,9 @@
         state: stopped
         enabled: no
       register: systemd_resolved_svc
+      when:
+        - ansible_os_family == 'Debian'
+        - ansible_distribution_release == 'bionic'
 
     - name: bootstrap resolv.conf
       include_role:
@@ -360,7 +371,7 @@
 
         - name: query pdns zones
           uri:
-            url: "{{ pdns_url }}/api/v1/servers/localhost/zones"
+            url: "{{ pdns_api_proto | default(pdns_api_proto_default) }}://localhost:{{ pdns_api_port | default(pdns_api_port_default) }}/api/v1/servers/localhost/zones"
             method: GET
             headers:
               X-API-Key: "{{ pdns_api_key }}"
