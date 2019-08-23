@@ -56,7 +56,7 @@
           vars:
             query: "[?type!='SOA' && type!='NS']"
 
-        - name: manage extra records
+        - name: create extra records
           uri:
             url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
             method: "{{ 'PUT' if not record_name in _pdns_records else 'PATCH' }}"
@@ -73,6 +73,7 @@
             record_name: "{{ item.name | regex_replace('\\.$', '') }}."
             zone_name: "{{ record_name.split('.')[1:-1] | join('.') }}."
             record_type: "{{ record.type | default('A') }}"
+            record_present: "{{ record.present | default('yes') }}"
             record_rrset:
               name: "{{ record_name }}"
               type: "{{ record_type }}"
@@ -89,5 +90,41 @@
           when:
             - not record_name in _pdns_records
             - record_type != 'PTR'
+            - record_present | bool
+
+        - name: delete stale records
+          uri:
+            url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
+            method: PATCH
+            body_format: json
+            body:
+              kind: Master
+              rrsets:
+                - "{{ record_rrset }}"
+            headers:
+              X-API-Key: "{{ pdns_api_key }}"
+            validate_certs: no
+            status_code: 204
+          vars:
+            record_name: "{{ item.name | regex_replace('\\.$', '') }}."
+            zone_name: "{{ record_name.split('.')[1:-1] | join('.') }}."
+            record_type: "{{ record.type | default('A') }}"
+            record_present: "{{ record.present | default('yes') }}"
+            record_rrset:
+              name: "{{ record_name }}"
+              type: "{{ record_type }}"
+              ttl: "{{ dns_ttl }}"
+              changetype: 'DELETE'
+              records:
+                - content: "{{ record.content }}"
+                  disabled: false
+                  set-ptr: true
+          loop_control:
+            loop_var: record
+            label: "{{ item.0 }}"
+          loop: "{{ pdns_records | default(pdns_records_default) }}"
+          when:
+            - record_name in _pdns_records
+            - not (record_present | bool)
 
       run_once: yes
