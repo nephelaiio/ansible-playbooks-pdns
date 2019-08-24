@@ -157,11 +157,10 @@
       include_role:
         name: ahuffman.resolv
       vars:
-        resolv_nameservers: "{{ nameservers | default(nameservers_default) }}"
+        resolv_nameservers: "{{ pdns_recursor_nameservers | default(nameservers_default) }}"
         resolv_domain: "{{ base_domain }}"
         resolv_options:
-          - timeout:2
-          - rotate
+          - timeout:1
       when: systemd_resolved_svc.changed
 
     - name: install pdns recursor
