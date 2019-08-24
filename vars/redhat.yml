@@ -18,3 +18,4 @@ postgresql_packages:
   - "postgresql{{ postgresql_version | regex_replace('\\.', '') }}-libs"
   - "postgresql{{ postgresql_version | regex_replace('\\.', '') }}-contrib"
   - "postgresql{{ postgresql_version | regex_replace('\\.', '') }}-devel"
+pdns_rec_config_dir: /etc/pdns-recursor

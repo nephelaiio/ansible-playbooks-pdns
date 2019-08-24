@@ -11,12 +11,12 @@
       - 1.1.1.1
       - 8.8.8.8
     pdns_rec_api_addr: 127.0.0.1
-    pdns_rec_api_dir: /etc/powerdns/recursor.d
     pdns_rec_api_port: 8082
     pdns_rec_user: "{{ 'pdns' if ansible_os_family == 'Debian' else 'pdns-recursor' }}"
     pdns_rec_group: "{{ 'pdns' if ansible_os_family == 'Debian' else 'pdns-recursor' }}"
     pdns_rec_service_overrides:
-      ReadWritePaths: "{{ pdns_rec_api_dir }}"
+      ProtectSystem: "false"
+    pdns_rec_api_dir: "{{ pdns_rec_config_dir }}/recursor.d"
     pdns_rec_config:
       setuid: "{{ pdns_rec_user }}"
       setgid: "{{ pdns_rec_group }}"
@@ -242,11 +242,15 @@
 
     - name: fix configuration file permissions
       file:
-        path: /etc/powerdns
+        path: "{{ item }}"
         state: directory
+        mode: 0750
         owner: "{{ pdns_rec_user }}"
         group: "{{ pdns_rec_group }}"
         recurse: yes
+      loop:
+        - "{{ pdns_rec_api_dir }}"
+        - "{{ pdns_rec_config_dir }}"
 
   post_tasks:
 
