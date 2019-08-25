@@ -1,6 +1,6 @@
 ---
-pdns_user: pdns
-pdns_group: pdns
+pdns_user: root
+pdns_group: root
 pdns_rec_user: "{{ pdns_user }}"
 pdns_rec_group: "{{ pdns_group }}"
 pdns_pkg_requirements:
