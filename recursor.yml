@@ -12,8 +12,6 @@
       - 8.8.8.8
     pdns_rec_api_addr: 127.0.0.1
     pdns_rec_api_port: 8082
-    pdns_rec_user: "{{ 'pdns' if ansible_os_family == 'Debian' else 'pdns-recursor' }}"
-    pdns_rec_group: "{{ 'pdns' if ansible_os_family == 'Debian' else 'pdns-recursor' }}"
     pdns_rec_service_overrides:
       ProtectSystem: "false"
     pdns_rec_api_dir: "{{ pdns_rec_config_dir }}/recursor.d"
@@ -225,11 +223,14 @@
 
     - name: fix configuration file permissions
       file:
-        path: "{{ pdns_rec_api_dir }}"
+        path: "{{ item }}"
         state: directory
-        mode: 0755
+        mode: '0755'
         owner: "{{ pdns_rec_user }}"
         group: "{{ pdns_rec_group }}"
+      loop:
+        - "{{ pdns_rec_api_dir }}"
+        - "{{ pdns_rec_config_dir }}"
 
   post_tasks:
 

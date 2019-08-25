@@ -1,6 +1,8 @@
 ---
-pdns_rec_user: pdns-recursor
-pdns_rec_group: pdns-recursor
+pdns_user: root
+pdns_group: root
+pdns_rec_user: "{{ pdns_user }}"
+pdns_rec_group: "{{ pdns_group }}"
 pdns_pkg_requirements:
   - bind-utils
 pdns_nginx_user: nginx

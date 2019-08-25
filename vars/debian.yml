@@ -1,6 +1,8 @@
 ---
-pdns_rec_user: pdns
-pdns_rec_group: pdns
+pdns_user: pdns
+pdns_group: pdns
+pdns_rec_user: "{{ pdns_user }}"
+pdns_rec_group: "{{ pdns_group }}"
 pdns_pkg_requirements:
   - dnsutils
 pdns_nginx_user: www-data

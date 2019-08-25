@@ -25,8 +25,8 @@
       slave: "{{ not ((pdns_master | default('no')) | bool) }}"
       disable-axfr: "{{ not ((pdns_master | default('no')) | bool) }}"
       allow-axfr-ips: "{{ play_hosts | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
-      setuid: "{{ pdns_rec_user }}"
-      setgid: "{{ pdns_rec_group }}"
+      setuid: "{{ pdns_user }}"
+      setgid: "{{ pdns_group }}"
       local-address: "{{ ansible_default_ipv4.address }}:53"
       security-poll-suffix: ''
       default-soa-name: "{{ play_hosts | first | map(attribute='inventory_hostname') }}"
