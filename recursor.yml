@@ -241,15 +241,11 @@
 
     - name: fix configuration file permissions
       file:
-        path: "{{ item }}"
+        path: "{{ pdns_rec_api_dir }}"
         state: directory
-        mode: 0750
+        mode: 0755
         owner: "{{ pdns_rec_user }}"
         group: "{{ pdns_rec_group }}"
-        recurse: yes
-      loop:
-        - "{{ pdns_rec_api_dir }}"
-        - "{{ pdns_rec_config_dir }}"
 
   post_tasks:
 
