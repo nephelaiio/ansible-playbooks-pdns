@@ -225,11 +225,14 @@
 
     - name: fix configuration file permissions
       file:
-        path: "{{ pdns_rec_api_dir }}"
+        path: "{{ item }}"
         state: directory
-        mode: 0755
+        mode: '0755'
         owner: "{{ pdns_rec_user }}"
         group: "{{ pdns_rec_group }}"
+      loop:
+        - "{{ pdns_rec_api_dir }}"
+        - "{{ pdns_rec_config_dir }}"
 
   post_tasks:
 
