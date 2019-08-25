@@ -7,7 +7,7 @@
 
   vars:
 
-    nameservers_default:
+    pdns_recursor_nameservers_default:
       - 1.1.1.1
       - 8.8.8.8
     pdns_rec_api_addr: 127.0.0.1
@@ -120,19 +120,16 @@
         - "vars/{{ ansible_distribution | lower }}.yml"
         - "vars/{{ ansible_os_family | lower }}.yml"
 
-    - block:
-
-        - name: build recursor host metadata
-          set_fact:
-            hosts_entries: "{{ (hosts_entries | default([])) | union([recursor_host]) }}"
-          loop_control:
-            label: "{{ item }}"
-          vars:
-            recursor_host:
-              name: "{{ hostvars[item]['ansible_fqdn'] }}"
-              ip: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
-          loop: "{{ play_hosts }}"
-
+    - name: build recursor host metadata
+      set_fact:
+        hosts_entries: "{{ (hosts_entries | default([])) | union([recursor_host]) }}"
+      loop_control:
+        label: "{{ item }}"
+      vars:
+        recursor_host:
+          name: "{{ hostvars[item]['ansible_fqdn'] }}"
+          ip: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+      loop: "{{ play_hosts }}"
       run_once: yes
 
   tasks:
@@ -147,21 +144,19 @@
         name: systemd-resolved
         state: stopped
         enabled: no
-      register: systemd_resolved_svc
       when:
         - ansible_os_family is defined
         - ansible_os_family == 'Debian'
         - ansible_distribution_release == 'bionic'
 
-    - name: bootstrap resolv.conf
+    - name: manage resolv.conf
       include_role:
         name: ahuffman.resolv
       vars:
-        resolv_nameservers: "{{ pdns_recursor_nameservers | default(nameservers_default) }}"
-        resolv_domain: "{{ base_domain }}"
+        resolv_nameservers: "{{ pdns_recursor_nameservers | default(['127.0.0.1'] + pdns_recursor_nameservers_default) }}"
+        resolv_domain: "{{ pdns_recursor_resolv_domain | default('') }}"
         resolv_options:
           - timeout:1
-      when: systemd_resolved_svc.changed
 
     - name: install pdns recursor
       include_role:
@@ -218,17 +213,6 @@
           when:
             - netplan_file != netplan_config_file
           notify: restart networking
-
-        - name: manage resolv.conf
-          include_role:
-            name: ahuffman.resolv
-          vars:
-            resolv_nameservers:
-              - 127.0.0.1
-            resolv_domain: "{{ base_domain }}"
-            resolv_options:
-              - timeout:2
-              - rotate
 
       when:
         - ansible_os_family is defined
