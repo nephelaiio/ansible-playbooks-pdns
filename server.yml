@@ -149,6 +149,7 @@
         - name: build recursor host metadata
           set_fact:
             recursor_hosts_entries: "{{ (recursor_hosts_entries | default([])) | union([recursor_host]) }}"
+            recursor_ips: "{{ (recursor_ips | default([])) | union([recursor_host.ip]) }}"
           loop_control:
             label: "{{ item }}"
           vars:
@@ -237,7 +238,7 @@
       include_role:
         name: ahuffman.resolv
       vars:
-        resolv_nameservers: "{{ nameservers }}"
+        resolv_nameservers: "{{ recursor_ips }}"
         resolv_domain: "{{ base_domain }}"
         resolv_options:
           - timeout:2
