@@ -242,7 +242,6 @@
         resolv_options:
           - timeout:2
           - rotate
-      when: systemd_resolved_svc.changed
 
     - name: install powerdns
       include_role:
