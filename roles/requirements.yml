@@ -8,7 +8,7 @@
 - src: nephelaiio.plugins
   version: 1.0.9
 - src: nephelaiio.acme_certificate_route53
-  version: 1.0.0
+  version: 1.0.1
 - src: PowerDNS.pdns_recursor
   version: v1.1.0
 - src: PowerDNS.pdns
