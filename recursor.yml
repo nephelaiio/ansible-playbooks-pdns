@@ -8,8 +8,8 @@
   vars:
 
     pdns_recursor_nameservers_default:
-      - 1.1.1.1
       - 8.8.8.8
+      - 1.1.1.1
     pdns_rec_api_addr: 127.0.0.1
     pdns_rec_api_port: 8082
     pdns_rec_service_overrides:
