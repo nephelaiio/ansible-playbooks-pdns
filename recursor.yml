@@ -15,7 +15,7 @@
     pdns_rec_service_overrides:
       ProtectSystem: "false"
     pdns_rec_api_dir: "{{ pdns_rec_config_dir }}/recursor.d"
-    pdns_rec_config:
+    pdns_recursor_config_default:
       setuid: "{{ pdns_rec_user }}"
       setgid: "{{ pdns_rec_group }}"
       webserver: yes
@@ -30,6 +30,7 @@
       local-address: 0.0.0.0
       max-cache-ttl: 15
       max-negative-ttl: 15
+      export-etc-hosts: true
 
     acme_certificate_domain: "{{ inventory_hostname }}"
     acme_certificate_chainfile: "/etc/nginx/{{ acme_certificate_domain }}.chain.crt"
@@ -120,7 +121,7 @@
 
     - name: build recursor host metadata
       set_fact:
-        hosts_entries: "{{ (hosts_entries | default([])) | union([recursor_host]) }}"
+        play_hosts_entries: "{{ (play_hosts_entries | default([])) | union([recursor_host]) }}"
       loop_control:
         label: "{{ item }}"
       vars:
@@ -129,6 +130,10 @@
           ip: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
       loop: "{{ play_hosts }}"
       run_once: yes
+
+    - name: build recursor host metadata
+      set_fact:
+        hosts_entries: "{{ (pdns_recursor_hosts_entries | default([])) | union(play_hosts_entries) }}"
 
   tasks:
 
@@ -151,7 +156,7 @@
       include_role:
         name: ahuffman.resolv
       vars:
-        resolv_nameservers: "{{ pdns_recursor_nameservers | default(['127.0.0.1'] + pdns_recursor_nameservers_default) }}"
+        resolv_nameservers: "{{ ['127.0.0.1'] + (pdns_recursor_nameservers | default(pdns_recursor_nameservers_default)) }}"
         resolv_domain: "{{ pdns_recursor_resolv_domain | default('') }}"
         resolv_options:
           - timeout:1
@@ -160,6 +165,8 @@
       include_role:
         name: PowerDNS.pdns_recursor
       ignore_errors: yes
+      vars:
+        pdns_rec_config: "{{ pdns_recursor_config | default(pdns_recursor_config_default) }}"
 
     - block:
 
@@ -220,6 +227,8 @@
     - name: install pdns recursor
       include_role:
         name: PowerDNS.pdns_recursor
+      vars:
+        pdns_rec_config: "{{ pdns_recursor_config | default(pdns_recursor_config_default) }}"
 
     - name: fix configuration file permissions
       file:

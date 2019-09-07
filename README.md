@@ -20,7 +20,11 @@ The following lists the group targets and descriptions for every playbook
 The following parameters are available/required for playbook invocation
 
 ### [recursor.yml](recursor.yml):
-No variables should be overloading. You can still review the vars section in the [playbook definition](recursor.yml) if you wish to tweak playbook internal behavior
+| required | variable                   | description                 | default                           |
+| ---      | ---                        | ---                         | ---                               |
+| no       | pdns_recursor_host_entries | host entry overrides        | []                                |
+| no       | pdns_recursor_config       | pdns recursor configuration | see [playbook vars](recursor.yml) |
+|          |                            |                             |                                   |
 
 ### [server.yml](nginx.yml):
 | required | variable                              | description                                                | default                                |
