@@ -263,6 +263,11 @@
         nginx_http_template_enable: yes
         nginx_main_template_enable: yes
 
+    - name: restart pdns recursor
+      service:
+        name: pdns-recursor
+        state: restarted
+
   handlers:
 
     - name: netplan apply
