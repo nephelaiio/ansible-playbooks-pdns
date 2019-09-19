@@ -5,6 +5,11 @@
 
   gather_facts: no
 
+  vars:
+
+    _pdns_register_state: "{{ pdns_register_state | default('present') }}"
+    _pdns_register_changetype: "{{ 'DELETE' if _pdns_register_state == 'absent' else 'REPLACE' }}"
+
   roles:
 
     - nephelaiio.plugins
@@ -30,11 +35,35 @@
           name: "{{ record_name }}"
           type: A
           ttl: "{{ pdns_record_ttl | default(300) }}"
-          changetype: 'REPLACE'
+          changetype: "{{ _pdns_register_changetype }}"
+      delegate_to: localhost
+      when:
+        - _pdns_register_state == 'absent'
+
+    - name: register host in dns
+      uri:
+        url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
+        method: PATCH
+        body_format: json
+        body:
+          rrsets:
+            - "{{ record_rrset }}"
+        headers:
+          X-API-Key: "{{ pdns_api_key }}"
+        status_code: 204
+        validate_certs: no
+      vars:
+        zone_name: "{{ inventory_hostname | split_with('.') | tail | join('.') }}."
+        record_name: "{{ inventory_hostname }}."
+        record_rrset:
+          name: "{{ record_name }}"
+          type: A
+          ttl: "{{ pdns_record_ttl | default(300) }}"
+          changetype: "{{ _pdns_register_changetype }}"
           records:
             - content: "{{ ansible_host }}"
               disabled: false
-              set-ptr: true
       delegate_to: localhost
       when:
+        - _pdns_register_state != 'absent'
         - ansible_host | ipaddr
