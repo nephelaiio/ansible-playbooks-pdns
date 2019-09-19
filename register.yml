@@ -16,7 +16,7 @@
 
   tasks:
 
-    - name: register host in dns
+    - name: remove host from dns
       uri:
         url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
         method: PATCH
