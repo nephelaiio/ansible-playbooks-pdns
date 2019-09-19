@@ -57,9 +57,10 @@ pdns_master_ips: "{{ play_hosts | selectattr('pdns_master', 'defined') | selecta
 
 
 ### [register.yml](register.yml):
-| required | variable       | description                        | default |
-| ---      | ---            | ---                                | ---     |
-| *yes*    | pdns_api_key   | pdns api key                       | n/a     |
+| required | variable            | description                  | default                          |
+| ---      | ---                 | ---                          | ---                              |
+| *yes*    | pdns_api_key        | pdns api key                 | n/a                              |
+| no       | pdns_register_state | pdns_host registration state | 'present' ('present' / 'absent') |
 
 ## Example inventory
 
@@ -103,6 +104,10 @@ git checkout https://galaxy.ansible.com/nephelaiio/ansible-playbooks-pdns pdns
 ansible-playbook -i inventory/ pdns/recursor.yml
 ansible-playbook -i inventory/ pdns/server.yml
 ```
+
+## ToDo
+
+* Add reverse record management option and tasks
 
 ## Testing (TODO)
 
