@@ -35,5 +35,6 @@
             - content: "{{ ansible_host }}"
               disabled: false
               set-ptr: true
+      delegate_to: localhost
       when:
         - ansible_host | ipaddr
