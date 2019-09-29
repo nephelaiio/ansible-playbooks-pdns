@@ -40,7 +40,7 @@
       when:
         - _pdns_register_state == 'absent'
 
-    - name: register host in dns
+    - name: register host forward record
       uri:
         url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
         method: PATCH
@@ -62,6 +62,34 @@
           changetype: "{{ _pdns_register_changetype }}"
           records:
             - content: "{{ ansible_host }}"
+              disabled: false
+      delegate_to: localhost
+      when:
+        - _pdns_register_state != 'absent'
+        - ansible_host | ipaddr
+
+    - name: register host reverse_record
+      uri:
+        url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
+        method: PATCH
+        body_format: json
+        body:
+          rrsets:
+            - "{{ record_rrset }}"
+        headers:
+          X-API-Key: "{{ pdns_api_key }}"
+        status_code: 204
+        validate_certs: no
+      vars:
+        record_name: "{{ ansible_host | ipaddr('revdns') }}"
+        zone_name: "{{ record_name | split_with('.') | tail | join('.') }}"
+        record_rrset:
+          name: "{{ record_name }}"
+          type: PTR
+          ttl: "{{ pdns_record_ttl | default(300) }}"
+          changetype: "{{ _pdns_register_changetype }}"
+          records:
+            - content: "{{ inventory_hostname }}."
               disabled: false
       delegate_to: localhost
       when:
