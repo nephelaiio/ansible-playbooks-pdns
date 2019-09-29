@@ -13,6 +13,10 @@
     pdns_master_ips_default: "{{ play_hosts | selectattr('pdns_master', 'defined') | selectattr('pdns_master', 'equalto', True) | map(attribute='ansible_default_ipv4') | map(attribute='address') | list }}"
     pdns_soa_master_default: "{{ ansible_fqdn }}"
     pdns_soa_ttl_default: 300
+    pdns_install_repo: "{{ pdns_auth_powerdns_repo_master }}"
+    pdns_service_overrides:
+      User: "{{ pdns_user }}"
+      Group: "{{ pdns_user }}"
     pdns_config:
       api: yes
       api-key: "{{ pdns_api_key }}"
@@ -25,8 +29,6 @@
       slave: "{{ not ((pdns_master | default('no')) | bool) }}"
       disable-axfr: "{{ not ((pdns_master | default('no')) | bool) }}"
       allow-axfr-ips: "{{ play_hosts | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
-      setuid: "{{ pdns_user }}"
-      setgid: "{{ pdns_group }}"
       local-address: "{{ ansible_default_ipv4.address }}:53"
       security-poll-suffix: ''
       default-soa-name: "{{ play_hosts | first | map(attribute='inventory_hostname') }}"
@@ -247,10 +249,17 @@
     - name: install powerdns
       include_role:
         name: PowerDNS.pdns
+      ignore_errors: yes
       vars:
         pdns_install_repo: "{{ pdns_auth_powerdns_repo_master }}"
 
     - meta: flush_handlers
+
+    - name: install powerdns
+      include_role:
+        name: PowerDNS.pdns
+      vars:
+        pdns_install_repo: "{{ pdns_auth_powerdns_repo_master }}"
 
     - name: install nginx
       import_role:
