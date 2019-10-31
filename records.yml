@@ -70,14 +70,14 @@
             validate_certs: no
             status_code: 204
           vars:
-            record_name: "{{ item.name | regex_replace('\\.$', '') }}."
+            record_name: "{{ record.name | regex_replace('\\.$', '') }}."
             zone_name: "{{ record_name.split('.')[1:-1] | join('.') }}."
             record_type: "{{ record.type | default('A') }}"
             record_present: "{{ record.present | default('yes') }}"
             record_rrset:
               name: "{{ record_name }}"
               type: "{{ record_type }}"
-              ttl: "{{ dns_ttl }}"
+              ttl: "{{ dns_ttl | default('3600') }}"
               changetype: 'REPLACE'
               records:
                 - content: "{{ record.content }}"
@@ -85,7 +85,7 @@
                   set-ptr: true
           loop_control:
             loop_var: record
-            label: "{{ item.0 }}"
+            label: "{{ record_name }}"
           loop: "{{ pdns_records | default(pdns_records_default) }}"
           when:
             - not record_name in _pdns_records
@@ -106,14 +106,14 @@
             validate_certs: no
             status_code: 204
           vars:
-            record_name: "{{ item.name | regex_replace('\\.$', '') }}."
+            record_name: "{{ record.name | regex_replace('\\.$', '') }}."
             zone_name: "{{ record_name.split('.')[1:-1] | join('.') }}."
             record_type: "{{ record.type | default('A') }}"
             record_present: "{{ record.present | default('yes') }}"
             record_rrset:
               name: "{{ record_name }}"
               type: "{{ record_type }}"
-              ttl: "{{ dns_ttl }}"
+              ttl: "{{ dns_ttl | default('3600') }}"
               changetype: 'DELETE'
               records:
                 - content: "{{ record.content }}"
@@ -121,7 +121,7 @@
                   set-ptr: true
           loop_control:
             loop_var: record
-            label: "{{ item.0 }}"
+            label: "{{ record_name }}"
           loop: "{{ pdns_records | default(pdns_records_default) }}"
           when:
             - record_name in _pdns_records
