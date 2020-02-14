@@ -146,7 +146,7 @@
           delegate_facts: yes
           loop: "{{ pdns_recursors | default([]) }}"
           tags:
-            - always
+            - recursors
 
         - name: build recursor host metadata
           set_fact:
@@ -160,11 +160,11 @@
               ip: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
           loop: "{{ pdns_recursors | default([]) }}"
           tags:
-            - always
+            - recursors
 
         - name: set hosts entries metadata
           set_fact:
-            hosts_entries: "{{ recursor_hosts_entries + pdns_hosts_entries }}"
+            hosts_entries: "{{ recursor_hosts_entries | default([]) + pdns_hosts_entries }}"
           vars:
             pdns_hosts_entries:
               - name: "{{ pdns_hostname }}"
