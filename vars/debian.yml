@@ -7,3 +7,6 @@ pdns_pkg_requirements:
   - dnsutils
 pdns_nginx_user: www-data
 pdns_rec_config_dir: /etc/powerdns
+postgresql_python_library:
+  - python-psycopg2
+  - python3-psycopg2
