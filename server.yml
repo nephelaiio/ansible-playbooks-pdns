@@ -336,6 +336,12 @@
       tags:
         - zones
 
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+      changed_when: false
+
     - meta: flush_handlers
 
     - name: manage pdns self records

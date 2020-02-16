@@ -269,11 +269,13 @@
       service:
         name: pdns-recursor
         state: restarted
+      changed_when: false
 
     - name: restart nginx
       service:
         name: nginx
         state: restarted
+      changed_when: false
 
   handlers:
 
