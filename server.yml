@@ -226,15 +226,16 @@
       register: tmpdir
       changed_when: false
 
+    - name: gather service facts
+      service_facts:
+
     - name: disable systemd-resolved
-      service:
+      systemd:
         name: systemd-resolved
         state: stopped
         enabled: no
-      register: systemd_resolved_svc
-      when:
-        - ansible_os_family == 'Debian'
-        - ansible_distribution_release == 'bionic'
+        masked: yes
+      when: "'systemd-resolved.service' in ansible_facts.services"
 
     - name: bootstrap resolv.conf
       include_role:

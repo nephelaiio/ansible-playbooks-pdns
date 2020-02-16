@@ -143,15 +143,16 @@
         name: "{{ pdns_pkg_requirements }}"
         state: latest
 
+    - name: gather service facts
+      service_facts:
+
     - name: disable systemd-resolved
-      service:
+      systemd:
         name: systemd-resolved
         state: stopped
         enabled: no
-      when:
-        - ansible_os_family is defined
-        - ansible_os_family == 'Debian'
-        - ansible_distribution_release == 'bionic'
+        masked: yes
+      when: "'systemd-resolved.service' in ansible_facts.services"
 
     - name: manage resolv.conf
       include_role:
@@ -267,6 +268,11 @@
     - name: restart pdns recursor
       service:
         name: pdns-recursor
+        state: restarted
+
+    - name: restart nginx
+      service:
+        name: nginx
         state: restarted
 
   handlers:

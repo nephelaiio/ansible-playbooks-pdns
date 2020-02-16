@@ -17,3 +17,4 @@
 - src: geerlingguy.postgresql
   version: 2.0.1
 - src: geerlingguy.repo-epel
+  version: 1.2.4
