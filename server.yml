@@ -327,12 +327,11 @@
       command:
         "pdnsutil change-slave-zone-master {{ zone_name }} {{ pdns_master_ips | default(pdns_master_ips_default) | join(' ') }}"
       vars:
-        zone: "{{ item.value }}"
-        zone_name: "{{ zone.name }}."
+        zone_name: "{{ item | regex_replace('\\.$', '') }}."
         zone_kind: "{{ 'master' if pdns_master else 'slave' }}"
       loop_control:
-        label: "{{ zone_name }}"
-      loop: "{{ dns_zones | dict2items }}"
+        label: "{{ item }}"
+      loop: "{{ pdns_zones }}"
       when: pdns_master_ips | default(pdns_master_ips_default) != []
       tags:
         - zones

@@ -79,10 +79,7 @@ pdns_servers:
   vars:
     pdns_url: https://pdns.nephelai.io
     pdns_zones:
-      - name: nephelai.io
-        ns:
-          - ns1.nephelai.io
-          - ns2.nephelai.io
+      - nephelai.io
      pdns_recursors: "{{ groups['pdns_servers'] }}"
 ```
 
