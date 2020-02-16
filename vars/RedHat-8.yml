@@ -1,0 +1,5 @@
+---
+# Compensate for missing RedHat-8.yml include in geerlingg.postgrsql role
+postgresql_python_library:
+  - python2-psycopg2
+  - python3-psycopg2

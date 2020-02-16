@@ -7,17 +7,15 @@ pdns_pkg_requirements:
   - bind-utils
 pdns_nginx_user: nginx
 pdns_pg_yumrepo_default: https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-pdns_pg_version_default: 9.6
-postgresql_version: "{{ pdns_pg_version | default(pdns_pg_version_default) }}"
-postgresql_enablerepo: "pgdg{{ postgresql_version | regex_replace('\\.', '') }}"
-postgresql_data_dir: "/var/lib/pgsql/{{ postgresql_version }}/data"
-postgresql_bin_path: "/usr/pgsql-{{ postgresql_version }}/bin"
-postgresql_config_path: "/var/lib/pgsql/{{ postgresql_version }}/data"
-postgresql_daemon: "postgresql-{{ postgresql_version }}.service"
+postgresql_version: 10.6
+postgresql_data_dir: "/var/lib/pgsql/data"
+postgresql_bin_path: "/usr/bin"
+postgresql_config_path: "/var/lib/pgsql/data"
+postgresql_daemon: "postgresql"
 postgresql_packages:
-  - "postgresql{{ postgresql_version | regex_replace('\\.', '') }}"
-  - "postgresql{{ postgresql_version | regex_replace('\\.', '') }}-server"
-  - "postgresql{{ postgresql_version | regex_replace('\\.', '') }}-libs"
-  - "postgresql{{ postgresql_version | regex_replace('\\.', '') }}-contrib"
-  - "postgresql{{ postgresql_version | regex_replace('\\.', '') }}-devel"
+  - postgresql
+  - postgresql-server
+  - postgresql-libs
+  - postgresql-contrib
+  - postgresql-devel
 pdns_rec_config_dir: /etc/pdns-recursor
