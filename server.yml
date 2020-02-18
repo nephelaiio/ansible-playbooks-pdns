@@ -241,7 +241,7 @@
       include_role:
         name: ahuffman.resolv
       vars:
-        resolv_nameservers: "{{ recursor_ips }}"
+        resolv_nameservers: "{{ pdns_recursor_ips | default(recursor_ips) }}"
         resolv_domain: "{{ base_domain }}"
         resolv_options:
           - timeout:2
