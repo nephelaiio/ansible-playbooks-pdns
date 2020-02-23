@@ -1,0 +1,30 @@
+---
+- name: Restart recursor services
+
+  hosts: pdns_recursors
+
+  become: yes
+
+  tasks:
+
+    - name: wipe cache
+      command: rec_control wipe-cache $
+
+    - name: restart recursor service
+      service:
+        name: pdns-recursor
+        state: restarted
+
+
+- name: Restart authoritative services
+
+  hosts: pdns_servers
+
+  become: yes
+
+  tasks:
+
+    - name: restart recursor service
+      service:
+        name: pdns
+        state: restarted
