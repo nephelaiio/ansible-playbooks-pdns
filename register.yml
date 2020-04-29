@@ -16,7 +16,7 @@
 
   tasks:
 
-    - name: remove host from dns
+    - name: remove host forward record
       uri:
         url: "{{ pdns_url }}/api/v1/servers/localhost/zones/{{ zone_name }}"
         method: PATCH
